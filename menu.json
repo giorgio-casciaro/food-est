@@ -1,0 +1,61 @@
+{
+  "menu": {
+    "breakfast": {
+      "items": [
+        {
+          "name": "Pancakes",
+          "price": 8.99,
+          "description": "Fluffy pancakes served with maple syrup and butter."
+        },
+        {
+          "name": "Eggs Benedict",
+          "price": 10.99,
+          "description": "Poached eggs served on toasted English muffins with ham and hollandaise sauce."
+        },
+        {
+          "name": "French Toast",
+          "price": 7.99,
+          "description": "Thick slices of bread dipped in a mixture of beaten eggs and milk, then fried until golden brown."
+        }
+      ]
+    },
+    "lunch": {
+      "items": [
+        {
+          "name": "Caesar Salad",
+          "price": 9.99,
+          "description": "Romaine lettuce, croutons, Parmesan cheese, and Caesar dressing."
+        },
+        {
+          "name": "Grilled Chicken Sandwich",
+          "price": 11.99,
+          "description": "Grilled chicken breast topped with lettuce, tomato, and mayonnaise on a toasted bun."
+        },
+        {
+          "name": "Vegetable Stir-Fry",
+          "price": 12.99,
+          "description": "Assorted vegetables stir-fried in a savory sauce, served with steamed rice."
+        }
+      ]
+    },
+    "dinner": {
+      "items": [
+        {
+          "name": "Filet Mignon",
+          "price": 24.99,
+          "description": "Tender filet mignon grilled to perfection, served with mashed potatoes and seasonal vegetables."
+        },
+        {
+          "name": "Salmon with Lemon Butter Sauce",
+          "price": 19.99,
+          "description": "Grilled salmon fillet topped with a tangy lemon butter sauce, served with roasted potatoes."
+        },
+        {
+          "name": "Pasta Primavera",
+          "price": 16.99,
+          "description": "Pasta tossed with seasonal vegetables in a light cream sauce."
+        }
+      ]
+    }
+  }
+}
