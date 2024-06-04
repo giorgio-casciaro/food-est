@@ -1,0 +1,40 @@
+/* AdminPage.css */
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.admin-bar {
+  background-color: #333;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.admin-logo img {
+  width: 50px;
+  height: auto;
+}
+
+.admin-menu {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.admin-menu li {
+  margin-right: 20px;
+}
+
+.admin-menu li a {
+  text-decoration: none;
+  color: #fff;
+  font-weight: bold;
+}
+
+.content {
+  padding: 20px;
+}

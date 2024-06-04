@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Github JSON File Editor</title>
+</head>
+<body>
+  <h1>Github JSON File Editor</h1>
+  <div>
+    <label for="token">Github Access Token:</label>
+    <input type="text" id="token">
+    <button onclick="saveToken()">Save Token</button>
+  </div>
+  <div>
+    <button onclick="fetchFile()">Fetch JSON File</button>
+    <button onclick="updateFile()">Update JSON File</button>
+  </div>
+  <div>
+    <textarea id="json-content" rows="10" cols="50"></textarea>
+  </div>
+
+  <script>
+    const DATA_FILE = 'https://api.github.com/repos/giorgio-casciaro/food-est/contents/menu.json'
+    var fileSHA = ''
+
+
+
+    // Function to fetch the JSON file from GitHub
+    function fetchFile() {
+      const token = getToken();
+      if (!token) {
+        alert("Please provide a GitHub access token.");
+        return;
+      }
+      fetch(DATA_FILE, {
+        headers: {
+          Authorization: `token ${token}`,
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        
+        fileSHA = data.sha;
+            console.log('SHA of the file:', fileSHA);
+        const content = atob(data.content); // Decode content from base64
+        document.getElementById('json-content').value = content;
+      })
+      .catch(error => {
+        console.error('Error fetching file:', error);
+      });
+    }
+
+    // Function to update the JSON file on GitHub
+    function updateFile() {
+      const token = getToken();
+      if (!token) {
+        alert("Please provide a GitHub access token.");
+        return;
+      }
+
+      const content = document.getElementById('json-content').value;
+      const newData = JSON.parse(content);
+
+      fetch(DATA_FILE, {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'Update JSON file',
+          content: btoa(JSON.stringify(newData)), // Encode content to base64
+          sha: fileSHA, // You need to retrieve the SHA of the file from the GitHub API
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('File updated:', data);
+      })
+      .catch(error => {
+        console.error('Error updating file:', error);
+      });
+    }
+
+    // Function to save token to local storage
+    function saveToken() {
+      const token = document.getElementById('token').value;
+      if (token) {
+        localStorage.setItem('githubToken', token);
+        alert('Token saved successfully!');
+      } else {
+        alert('Please provide a token to save.');
+      }
+    }
+
+    // Function to get token from local storage
+    function getToken() {
+      return localStorage.getItem('githubToken');
+    }
+  </script>
+</body>
+</html>
