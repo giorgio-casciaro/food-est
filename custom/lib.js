@@ -133,6 +133,7 @@ export function createHTMLElement(props, labeledElements = {}) {
     return element;
 }
 
+
 /**
  * Updates an HTML element with new properties.
  *
@@ -170,26 +171,24 @@ export function updateHTMLElement(oldProps, newProps, element, labeledElements =
         }
     }
 
-    // Update component or children
-    if (newProps.isComponent) {
-        // Check if params have changed
-        if (JSON.stringify(oldProps.params) !== JSON.stringify(newProps.params)) {
-            const newComponent = newProps.tag(newProps);
-            element.replaceWith(newComponent);
-            element = newComponent; // Update reference to the new component
-        }
-    } else {
-        // Update children
-        while (element.firstChild) {
-            element.removeChild(element.firstChild);
-        }
+    // Update children
+    if (!newProps.isComponent) {
+        element.innerHTML = ''; // More performant way to remove all children
         for (const child of newProps.children) {
             if (child instanceof HtmlElementProps) {
-                element.appendChild(createHTMLElement(child, labeledElements, false));
+                if (child.label && (typeof child.label === "function" ? child.label(child) : child.label) in labeledElements) {
+                    updateHTMLElement(labeledElements[child.label].props, child, labeledElements[child.label], labeledElements);
+                    element.appendChild(labeledElements[child.label]);
+                } else {
+                    element.appendChild(createHTMLElement(child, labeledElements, false));
+                }
             } else {
                 element.appendChild(document.createTextNode(child));
             }
         }
+    } else if (newProps.isComponent && JSON.stringify(oldProps.params) !== JSON.stringify(newProps.params)) {
+        const newComponent = newProps.tag(newProps);
+        element.replaceWith(newComponent);
     }
 
     // Update the label registry if needed
