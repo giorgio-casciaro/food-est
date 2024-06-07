@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="testElement"></div>
+    <canvas id="performanceChart" width="400" height="200"></canvas>
+
+    <script>
+        // Numero di iterazioni per il test
+        const iterations = 1000000;
+
+        // Creazione dell'elemento di test
+        const testElement = document.getElementById('testElement');
+
+        // Funzione per misurare il tempo di esecuzione
+        function measureTime(fn) {
+            const start = performance.now();
+            fn();
+            const end = performance.now();
+            return end - start;
+        }
+
+        // Funzione per settare direttamente l'attributo
+        function setAttributeDirectly() {
+            for (let i = 0; i < iterations; i++) {
+                testElement.setAttribute('data-test', 'value');
+            }
+        }
+
+        // Funzione per controllare prima di settare l'attributo
+        function setAttributeWithCheck() {
+            for (let i = 0; i < iterations; i++) {
+                if (testElement.getAttribute('data-test') !== 'value') {
+                    testElement.setAttribute('data-test', 'value');
+                }
+            }
+        }
+
+        // Funzione per settare direttamente la proprietà JavaScript
+        function setPropertyDirectly() {
+            for (let i = 0; i < iterations; i++) {
+                testElement.dataset.test = 'value';
+            }
+        }
+
+        // Funzione per controllare prima di settare la proprietà JavaScript
+        function setPropertyWithCheck() {
+            for (let i = 0; i < iterations; i++) {
+                if (testElement.dataset.test !== 'value') {
+                    testElement.dataset.test = 'value';
+                }
+            }
+        }
+
+        // Funzione per aggiornare innerHTML
+        function updateInnerHTML() {
+            for (let i = 0; i < iterations; i++) {
+                testElement.innerHTML = 'value';
+            }
+        }
+
+        // Funzione per aggiornare textContent
+        function updateTextContent() {
+            for (let i = 0; i < iterations; i++) {
+                testElement.textContent = 'value';
+            }
+        }
+
+        // Funzione per aggiungere una classe
+        function addClass() {
+            for (let i = 0; i < iterations; i++) {
+                testElement.classList.add('test-class');
+            }
+        }
+
+        // Misura del tempo per ogni operazione
+        const timeDirectAttr = measureTime(setAttributeDirectly);
+        const timeCheckAttr = measureTime(setAttributeWithCheck);
+        const timeDirectProp = measureTime(setPropertyDirectly);
+        const timeCheckProp = measureTime(setPropertyWithCheck);
+        const timeInnerHTML = measureTime(updateInnerHTML);
+        const timeTextContent = measureTime(updateTextContent);
+        const timeAddClass = measureTime(addClass);
+
+        // Creazione del grafico
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const performanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Set Attribute Directly',
+                    'Check & Set Attribute',
+                    'Set Property Directly',
+                    'Check & Set Property',
+                    'Update innerHTML',
+                    'Update textContent',
+                    'Add Class'
+                ],
+                datasets: [{
+                    label: 'Time (ms)',
+                    data: [
+                        timeDirectAttr,
+                        timeCheckAttr,
+                        timeDirectProp,
+                        timeCheckProp,
+                        timeInnerHTML,
+                        timeTextContent,
+                        timeAddClass
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(199, 199, 199, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(199, 199, 199, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Stampa dei risultati in console
+        console.log(`Tempo per settare direttamente l'attributo: ${timeDirectAttr} ms`);
+        console.log(`Tempo per controllare e poi settare l'attributo: ${timeCheckAttr} ms`);
+        console.log(`Tempo per settare direttamente la proprietà: ${timeDirectProp} ms`);
+        console.log(`Tempo per controllare e poi settare la proprietà: ${timeCheckProp} ms`);
+        console.log(`Tempo per aggiornare innerHTML: ${timeInnerHTML} ms`);
+        console.log(`Tempo per aggiornare textContent: ${timeTextContent} ms`);
+        console.log(`Tempo per aggiungere una classe: ${timeAddClass} ms`);
+    </script>
+</body>
+</html>

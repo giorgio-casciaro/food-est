@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test - Read Attribute vs. Object Property</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="testElement" data-test="value"></div>
+    <canvas id="performanceChart" width="400" height="200"></canvas>
+
+    <script>
+        // Numero di iterazioni per il test
+        const iterations = 1000000;
+
+        // Creazione dell'elemento di test e dell'oggetto
+        const testElement = document.getElementById('testElement');
+        const testObject = { test: 'value' };
+
+        // Funzione per misurare il tempo di esecuzione
+        function measureTime(fn) {
+            const start = performance.now();
+            fn();
+            const end = performance.now();
+            return end - start;
+        }
+
+        // Funzione per leggere un attributo da un elemento HTML
+        function readAttribute() {
+            for (let i = 0; i < iterations; i++) {
+                const value = testElement.getAttribute('data-test');
+            }
+        }
+
+        // Funzione per leggere una proprietà da un oggetto JavaScript
+        function readProperty() {
+            for (let i = 0; i < iterations; i++) {
+                const value = testObject.test;
+            }
+        }
+
+        // Misura del tempo per ogni operazione
+        const timeReadAttr = measureTime(readAttribute);
+        const timeReadProp = measureTime(readProperty);
+
+        // Creazione del grafico
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const performanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Read Attribute',
+                    'Read Object Property'
+                ],
+                datasets: [{
+                    label: 'Time (ms)',
+                    data: [
+                        timeReadAttr,
+                        timeReadProp
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(75, 192, 192, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Stampa dei risultati in console
+        console.log(`Tempo per leggere l'attributo: ${timeReadAttr} ms`);
+        console.log(`Tempo per leggere la proprietà dell'oggetto: ${timeReadProp} ms`);
+    </script>
+</body>
+</html>

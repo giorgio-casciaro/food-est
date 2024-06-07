@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test - Object vs Class</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="performanceChart" width="400" height="200"></canvas>
+
+    <script>
+        // Numero di iterazioni per il test
+        const iterations = 1000000;
+
+        // Funzione per misurare il tempo di esecuzione
+        function measureTime(fn) {
+            const start = performance.now();
+            fn();
+            const end = performance.now();
+            return end - start;
+        }
+
+        // Funzione per creare un oggetto generico
+        function createGenericObject() {
+            for (let i = 0; i < iterations; i++) {
+                const obj = { test: 'value' };
+            }
+        }
+
+        // Funzione per creare un oggetto da una classe
+        class TestClass {
+            constructor() {
+                this.test = 'value';
+            }
+        }
+
+        function createClassObject() {
+            for (let i = 0; i < iterations; i++) {
+                const obj = new TestClass();
+            }
+        }
+
+        // Funzione per leggere una proprietà di un oggetto generico
+        function readGenericObject() {
+            const obj = { test: 'value' };
+            for (let i = 0; i < iterations; i++) {
+                const value = obj.test;
+            }
+        }
+
+        // Funzione per leggere una proprietà di un oggetto di una classe
+        function readClassObject() {
+            const obj = new TestClass();
+            for (let i = 0; i < iterations; i++) {
+                const value = obj.test;
+            }
+        }
+
+        // Funzione per scrivere una proprietà di un oggetto generico
+        function writeGenericObject() {
+            const obj = { test: 'value' };
+            for (let i = 0; i < iterations; i++) {
+                obj.test = 'new value';
+            }
+        }
+
+        // Funzione per scrivere una proprietà di un oggetto di una classe
+        function writeClassObject() {
+            const obj = new TestClass();
+            for (let i = 0; i < iterations; i++) {
+                obj.test = 'new value';
+            }
+        }
+
+        // Misura del tempo per ogni operazione
+        const timeCreateGeneric = measureTime(createGenericObject);
+        const timeCreateClass = measureTime(createClassObject);
+        const timeReadGeneric = measureTime(readGenericObject);
+        const timeReadClass = measureTime(readClassObject);
+        const timeWriteGeneric = measureTime(writeGenericObject);
+        const timeWriteClass = measureTime(writeClassObject);
+
+        // Creazione del grafico
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const performanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Create Generic Object',
+                    'Create Class Object',
+                    'Read Generic Object',
+                    'Read Class Object',
+                    'Write Generic Object',
+                    'Write Class Object'
+                ],
+                datasets: [{
+                    label: 'Time (ms)',
+                    data: [
+                        timeCreateGeneric,
+                        timeCreateClass,
+                        timeReadGeneric,
+                        timeReadClass,
+                        timeWriteGeneric,
+                        timeWriteClass
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Stampa dei risultati in console
+        console.log(`Tempo per creare un oggetto generico: ${timeCreateGeneric} ms`);
+        console.log(`Tempo per creare un oggetto di una classe: ${timeCreateClass} ms`);
+        console.log(`Tempo per leggere una proprietà di un oggetto generico: ${timeReadGeneric} ms`);
+        console.log(`Tempo per leggere una proprietà di un oggetto di una classe: ${timeReadClass} ms`);
+        console.log(`Tempo per scrivere una proprietà di un oggetto generico: ${timeWriteGeneric} ms`);
+        console.log(`Tempo per scrivere una proprietà di un oggetto di una classe: ${timeWriteClass} ms`);
+    </script>
+</body>
+</html>
