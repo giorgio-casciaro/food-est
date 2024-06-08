@@ -1,10 +1,9 @@
 /**
- * @file lib.js
+ * @file HtmlElementProps.js
  * @description This file contains commonly used utility functions and types for the Food Est project.
  * It includes functions for creating HTML elements, handling observables, and defining types for HTML element props.
  * @version 0.0.1
  */
-
 /**
  * @typedef {Object} HtmlElementProps
  * @property {string|function} [tag='div'] - The tag name of the element to create or the function if it's a component.
@@ -33,55 +32,61 @@ class HtmlElementProps {
         this.children = children;
         this.label = label;
         this.params = params;
-        this.isComponent = tag instanceof Function;
+        this.isComponent = typeof tag === 'function';
     }
 
-    _label(label) {
+    setLabel(label) {
         this.label = label;
         return this;
     }
+    getLabelString(props) {
+        if(typeof this.label === 'function') {
+            return this.label(props);
+        }
+        return this.label;
+    }
 
-    _attr(name, value) {
+    setAttr(name, value) {
         this.attributes[name] = value;
         return this;
     }
 
-    _attrs(attributes) {
+    setAttrs(attributes) {
         this.attributes = { ...this.attributes, ...attributes };
         return this;
     }
 
-    _event(name, listener) {
+    setEvent(name, listener) {
         this.events[name] = listener;
         return this;
     }
 
-    _events(events) {
+    setEvents(events) {
         this.events = { ...this.events, ...events };
         return this;
     }
 
-    _child(child) {
+    addChild(child) {
         this.children.push(child);
         return this;
     }
 
-    _children(children) {
+    setChildren(children) {
         this.children = [...this.children, ...children];
         return this;
     }
 
-    _text(text) {
+    setText(text) {
         this.children = [text];
         return this;
     }
 
-    _param(name, value) {
+    setParam(name, value) {
         this.params[name] = value;
         return this;
     }
 
-    _params(params) {
+    setParams(params) {
         this.params = { ...this.params, ...params };
         return this;
     }
@@ -98,10 +103,8 @@ class HtmlElementProps {
  * @property {Object.<string, any>} [params={}] - Parameters to pass to the component.
  */
 export function tag(tag, attributes = {}, events = {}, children = [], label = null, params = {}) {
-    return new HtmlElementProps(tag, attributes, events, children, label);
+    return new HtmlElementProps(tag, attributes, events, children, label, params);
 }
-
-
 /**
  * Creates an HTML element based on the given props.
  *
@@ -118,7 +121,7 @@ export function createHTMLElement(props, labeledElements = {}) {
     for (const [event, handler] of Object.entries(props.events)) {
         element.addEventListener(event, handler);
     }
-    if(!props.isComponent){
+    if (!props.isComponent) {
         for (const child of props.children) {
             if (child instanceof HtmlElementProps) {
                 element.appendChild(createHTMLElement(child, labeledElements, false));
@@ -127,12 +130,15 @@ export function createHTMLElement(props, labeledElements = {}) {
             }
         }
     }
-    if(props.label){labeledElements[props.label] = element;}
+    const label = props.getLabelString(props);
+    if (label) {
+        labeledElements[label] = element;
+        element._htmlElementProps = props;
+    }
 
-    console.log('createHTMLElement ',props,labeledElements,element);
+    console.log('createHTMLElement', props, labeledElements, element);
     return element;
 }
-
 
 /**
  * Updates an HTML element with new properties.
@@ -144,6 +150,7 @@ export function createHTMLElement(props, labeledElements = {}) {
  * @return {void} This function does not return anything.
  */
 export function updateHTMLElement(oldProps, newProps, element, labeledElements = {}) {
+    console.log('Updated HTMLElement start', oldProps, newProps, element);
     // Update attributes
     for (const key in oldProps.attributes) {
         if (!(key in newProps.attributes)) {
@@ -173,101 +180,70 @@ export function updateHTMLElement(oldProps, newProps, element, labeledElements =
 
     // Update children
     if (!newProps.isComponent) {
-        element.innerHTML = ''; // More performant way to remove all children
+        var elementsToAppend = []
         for (const child of newProps.children) {
             if (child instanceof HtmlElementProps) {
-                if (child.label && (typeof child.label === "function" ? child.label(child) : child.label) in labeledElements) {
-                    updateHTMLElement(labeledElements[child.label].props, child, labeledElements[child.label], labeledElements);
-                    element.appendChild(labeledElements[child.label]);
+                const label = typeof child.label === "function" ? child.label(child) : child.label;
+                if (label && labeledElements[label]) {
+                    updateHTMLElement(labeledElements[label]._htmlElementProps, child, labeledElements[label], labeledElements);
+                    elementsToAppend.push(labeledElements[label]);
                 } else {
-                    element.appendChild(createHTMLElement(child, labeledElements, false));
+                    elementsToAppend.push(createHTMLElement(child, labeledElements, false));
                 }
             } else {
-                element.appendChild(document.createTextNode(child));
+                elementsToAppend.push(document.createTextNode(child));
             }
         }
-    } else if (newProps.isComponent && JSON.stringify(oldProps.params) !== JSON.stringify(newProps.params)) {
-        const newComponent = newProps.tag(newProps);
-        element.replaceWith(newComponent);
+        while (element.lastChild) {
+            element.removeChild(element.lastChild);
+        }
+        element.append(...elementsToAppend);
+    } else {
+        const paramsChanged = Object.keys(newParams).length !== Object.keys(oldParams).length || Object.keys(newParams).some(key => newParams[key] !== oldParams[key]);
+        if (paramsChanged) {
+            const newComponent = newProps.tag(newProps);
+            element.replaceWith(newComponent);
+        }
     }
 
     // Update the label registry if needed
-    if (newProps.label && element !== labeledElements[newProps.label]) {
-        labeledElements[newProps.label] = element;
+    const label = props.getLabelString(newProps);
+    if (label && element !== labeledElements[label]) {
+        labeledElements[label] = element;
+        element._htmlElementProps = newProps;
     }
 
     console.log('Updated HTMLElement', oldProps, newProps, element);
 }
 
-/**
- * Creates an observable object that notifies listeners of changes.
- *
- * @param {Object|Array} data - The data to observe.
- * @returns {Object} An observable object with data and bind method.
- */
-export function observable(data, name = "ROOT", parent = null) {
-    console.log("observable OBJ", name, typeof data, data)
-    const listeners = new Set();
 
-    /**
-     * Adds a listener function to be called when a specific property is set.
-     *
-     * @param {Array} keys - An array of property keys to listen for.
-     * @param {Function} listenerFn - The listener function to be called when the property is set.
-     * @return {Function} A function to unbind the listener.
-     */
-    const $onSet = (keys, listenerFn) => {
-        const listener = { keys, listenerFn };
-        listeners.add(listener);
-        listenerFn(); // Initial call to set up
-        console.log("proxy", name, "BIND", listeners);
-        return () => listeners.delete(listener);
-    };
+function isEqualHtmlElementProps(a, b) {
+    if (a.tag !== b.tag || typeof a.tag !== typeof b.tag) return false;
+    if (a.isComponent !== b.isComponent) return false;
 
-    let updateStarted = false;
-    const propsUpdated = new Set();
-
-    function updateUi() {
-        console.log("observable updateUi", propsUpdated, listeners, proxy);
-        listeners.forEach(listener => {
-            let execute = false;
-            for (const key of listener.keys) {
-                if (propsUpdated.has(key)) {
-                    execute = true;
-                    break;
-                }
-            }
-            if (execute) listener.listenerFn();
-        });
-        updateStarted = false;
-        propsUpdated.clear();
+    if (Object.keys(a.attributes).length !== Object.keys(b.attributes).length) return false;
+    for (let key in a.attributes) {
+        if (a.attributes[key] !== b.attributes[key]) return false;
     }
 
-    const proxy = new Proxy(data, {
-        get(target, key) {
-            // console.log("proxy", name, "GET", typeof (target[key]), key, target);
-            if (key === "$onSet") return $onSet;
-            return target[key];
-        },
-        set(target, key, value) {
-            console.log("proxy", name, "SET", typeof (value), key, target, listeners);
-            target[key] = value;
-            propsUpdated.add(key);
-            if (!updateStarted) {
-                updateStarted = true;
-                requestAnimationFrame(updateUi);
-            }
-            return true;
-        },
-    });
+    if (Object.keys(a.params).length !== Object.keys(b.params).length) return false;
+    for (let key in a.params) {
+        if (a.params[key] !== b.params[key]) return false;
+    }
 
-    for (const [key, value] of Object.entries(data)) {
-        console.log("observable PROP", key, value, typeof data[key]);
-        if (typeof data[key] === "object") {
-            console.log("observable PROP", key, value);
-            data[key] = observable(value, key, proxy);
+    if (a.children.length !== b.children.length) return false;
+    for (let i = 0; i < a.children.length; i++) {
+        if (typeof a.children[i] === 'object' && typeof b.children[i] === 'object') {
+            if (!isEqualHtmlElementProps(a.children[i], b.children[i])) return false;
+        } else if (a.children[i] !== b.children[i]) {
+            return false;
         }
     }
 
-    return proxy;
+    if (Object.keys(a.events).length !== Object.keys(b.events).length) return false;
+    for (let key in a.events) {
+        if (!(key in b.events) || a.events[key] !== b.events[key]) return false;
+    }
+
+    return true;
 }
