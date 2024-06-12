@@ -26,29 +26,6 @@
  * @property {Object<string, *>} parameters - Additional parameters for advanced configurations.
  */
 
-// /**
-//  * @typedef {Object} DocumentFragmentTag
-//  * @class
-//  * @property {DocumentFragmentState} state - The current state of the element.
-//  * @property {DocumentFragmentState|null} oldState - The previous state of the element.
-//  * @property {DocumentFragment|HTMLElement|string|null} element - The HTML element.
-//  */
-
-// /**
-//  * @typedef {Object} HTMLElementTag
-//  * @class 
-//  * @property {HTMLElementState} state - The current state of the element.
-//  * @property {HTMLElementState|null} oldState - The previous state of the element.
-//  * @property {HTMLElement|null} element - The HTML element.
-//  */
-
-// /**
-//  * @typedef {Object} ComponentTag
-//  * @class
-//  * @property {ComponentState} state - The current state of the element.
-//  * @property {ComponentState|null} oldState - The previous state of the element.
-//  * @property {HTMLElement|null} element - The HTML element.
-//  */
 
 /**
  * @typedef {DocumentFragment|HTMLElement|Component|string|number} AnyTag

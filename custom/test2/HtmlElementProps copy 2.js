@@ -26,32 +26,9 @@
  * @property {Object<string, *>} parameters - Additional parameters for advanced configurations.
  */
 
-// /**
-//  * @typedef {Object} DocumentFragmentTag
-//  * @class
-//  * @property {DocumentFragmentState} state - The current state of the element.
-//  * @property {DocumentFragmentState|null} oldState - The previous state of the element.
-//  * @property {DocumentFragment|HTMLElement|string|null} element - The HTML element.
-//  */
-
-// /**
-//  * @typedef {Object} HTMLElementTag
-//  * @class 
-//  * @property {HTMLElementState} state - The current state of the element.
-//  * @property {HTMLElementState|null} oldState - The previous state of the element.
-//  * @property {HTMLElement|null} element - The HTML element.
-//  */
-
-// /**
-//  * @typedef {Object} ComponentTag
-//  * @class
-//  * @property {ComponentState} state - The current state of the element.
-//  * @property {ComponentState|null} oldState - The previous state of the element.
-//  * @property {HTMLElement|null} element - The HTML element.
-//  */
 
 /**
- * @typedef {DocumentFragment|HTMLElement|Component|string|number} AnyTag
+ * @typedef {DocumentFragmentTag|HTMLElementTag|ComponentTag|string|number} AnyTag
  */
 
 /**
@@ -207,7 +184,7 @@ export class HTMLElementTag extends DocumentFragmentTag {
      * @returns {HTMLElementTag} Current instance for chaining.
      */
     setStyles(styles) {
-        this.styles = { ...this.styles, ...styles };
+        this.state.styles = { ...this.state.styles, ...styles };
         return this;
     }
 
@@ -218,7 +195,7 @@ export class HTMLElementTag extends DocumentFragmentTag {
      * @returns {HTMLElementTag} This instance for chaining.
      */
     setTag(tag) {
-        this.tag = tag;
+        this.state.tag = tag;
         return this;
     }
 
@@ -249,14 +226,12 @@ export class HTMLElementTag extends DocumentFragmentTag {
 
 /**
  * @class
- * @extends HTMLElementTag
  * @property {ComponentState} state - The current state of the element.
  * @property {ComponentState|null} oldState - The previous state of the element.
  * @property {HTMLElement|null} element - The HTML element.
  */
-export class ComponentTag extends HTMLElementTag {
+export class ComponentTag  {
     constructor() {
-        super();
         this.state.component = null;
         this.state.parameters = {};
     }
@@ -316,80 +291,3 @@ export function component(component) {
     return new ComponentHtmlElementProps(component);
 }
 
-
-
-/**
- * Updates an HTML element with new properties.
- *
- * @param {HtmlElementProps} oldProps - The old properties of the element.
- * @param {HtmlElementProps} newProps - The new properties to update the element with.
- * @param {HTMLElement} element - The HTML element to update.
- * @param {Object.<string, HTMLElement>} [labeledElements={}] - (optional) The labeled elements registry.
- * @return {void} This function does not return anything.
- */
-export function updateHTMLElement(oldProps, newProps, element, labeledElements = {}) {
-    console.log('Updated HTMLElement start', oldProps, newProps, element);
-    // // Update attributes
-    // for (const key in oldProps.attributes) {
-    //     if (!(key in newProps.attributes)) {
-    //         element.removeAttribute(key);
-    //     }
-    // }
-    // for (const [key, value] of Object.entries(newProps.attributes)) {
-    //     if (element.getAttribute(key) !== value) {
-    //         element.setAttribute(key, value);
-    //     }
-    // }
-
-    // // Update event listeners
-    // for (const key in oldProps.events) {
-    //     if (!(key in newProps.events)) {
-    //         element.removeEventListener(key, oldProps.events[key]);
-    //     }
-    // }
-    // for (const [event, handler] of Object.entries(newProps.events)) {
-    //     if (oldProps.events[event] !== handler) {
-    //         if (oldProps.events[event]) {
-    //             element.removeEventListener(event, oldProps.events[event]);
-    //         }
-    //         element.addEventListener(event, handler);
-    //     }
-    // }
-
-    // // Update children
-    // if (!newProps.isComponent) {
-    //     var elementsToAppend = []
-    //     for (const child of newProps.children) {
-    //         if (child instanceof HtmlElementProps) {
-    //             const label = typeof child.label === "function" ? child.label(child) : child.label;
-    //             if (label && labeledElements[label]) {
-    //                 updateHTMLElement(labeledElements[label]._htmlElementProps, child, labeledElements[label], labeledElements);
-    //                 elementsToAppend.push(labeledElements[label]);
-    //             } else {
-    //                 elementsToAppend.push(createHTMLElement(child, labeledElements, false));
-    //             }
-    //         } else {
-    //             elementsToAppend.push(document.createTextNode(child));
-    //         }
-    //     }
-    //     while (element.lastChild) {
-    //         element.removeChild(element.lastChild);
-    //     }
-    //     element.append(...elementsToAppend);
-    // } else {
-    //     const paramsChanged = Object.keys(newParams).length !== Object.keys(oldParams).length || Object.keys(newParams).some(key => newParams[key] !== oldParams[key]);
-    //     if (paramsChanged) {
-    //         const newComponent = newProps.tag(newProps);
-    //         element.replaceWith(newComponent);
-    //     }
-    // }
-
-    // // Update the label registry if needed
-    // const label = props.getLabelString(newProps);
-    // if (label && element !== labeledElements[label]) {
-    //     labeledElements[label] = element;
-    //     element._htmlElementProps = newProps;
-    // }
-
-    console.log('Updated HTMLElement', oldProps, newProps, element);
-}
