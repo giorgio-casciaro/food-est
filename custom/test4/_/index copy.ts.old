@@ -1,0 +1,277 @@
+// domTemplate: root domTemplateNode generator
+// domTemplateNode definizione di un elemento dinamico
+// i children che possono sparire devono avere una label
+
+/*
+optionsBits32 = [bool hasLabel]
+__DELIMITER_32__ = 32 bit max number
+HtmlElementStateAsUint32Array
+Uint32Array [
+    optionsBits32,
+    labelIndex32,
+    tagIndex32,
+    __DELIMITER_32__,
+    ...(argumentNameDicIndex32, argumentValueDicIndex32),
+    __DELIMITER_32__,
+    ...(eventNameDicIndex32, eventValueDicIndex32),
+    __DELIMITER_32__,
+    ...(styleNameDicIndex32, styleValueDicIndex32), 
+    __DELIMITER_32__,
+    ... childrenDicIndex32, 
+    __DELIMITER_32__,
+    ... textValueDicIndex32?, 
+    ]
+*/
+interface HtmlElementState {
+    tag: string,
+    label: null | string,
+    args: Record<string, string>,
+    events: Record<string, () => void>,
+    styles: Record<string, string>,
+    children: Array<HtmlElementState | HtmlElementTextState>
+}
+interface HtmlElementTextState {
+    label: null | string,
+    content: string
+}
+
+
+
+// interface DomTemplate {
+//     generator: Function
+//     domTemplateNode: null | DomTemplateNodeElement
+// }
+// interface DomTemplateNodeText {
+//     parent: DomTemplateNodeElement,
+//     label: null | string,
+//     content: null | Array<DomTemplateNodeElement | DomTemplateNodeText> | string
+// }
+// interface DomTemplateNodeElement {
+//     label: null | string,
+//     tag: string,
+//     arguments: Record<string, string>,
+//     events: Record<string, () => void>,
+//     styles: Record<string, string>,
+//     content: Array<DomTemplateNodeElement | DomTemplateNodeText>
+// }
+
+// interface DomTemplateContext {
+//     activeNode: null | DomTemplateNodeElement
+// }
+
+
+// let context: DomTemplateContext = {
+//     activeNode: null
+// }
+
+
+const text = (value: string, ...args: Uint32Array[]): Uint32Array => {
+    let valueIndex = TEXTS[value]
+    if (valueIndex === undefined) {
+        valueIndex = TEXTS_ARRAY.length
+        TEXTS_ARRAY.push(value)
+        TEXTS[value] = valueIndex
+    }
+    return new Uint32Array([TYPES.text, valueIndex]);
+}
+
+const attr = (name: string, value: string): Uint32Array => {
+    let nameIndex = ATTR[name]
+    if (nameIndex === undefined) {
+        nameIndex = ATTR_ARRAY.length
+        ATTR_ARRAY.push(name)
+        ATTR[name] = nameIndex
+    }
+    let valueIndex = ATTR[value]
+    if (valueIndex === undefined) {
+        valueIndex = ATTR_ARRAY.length
+        ATTR_ARRAY.push(value)
+        ATTR[value] = valueIndex
+    }
+    return new Uint32Array([TYPES.attr, nameIndex, valueIndex]);
+}
+
+const element = (tag: string, ...args: Uint32Array[]) : Uint32Array => {
+    let tagIndex = TAG[tag];
+    if (tagIndex === undefined) {
+        tagIndex = TAG_ARRAY.length;
+        TAG_ARRAY.push(tag);
+        TAG[tag] = tagIndex;
+    }
+
+    // Calculate the total length needed for the combined array
+    let totalLength = 2; // for TYPES.element and tagIndex
+    for (let i = 0; i < args.length; i++) {
+        totalLength += args[i].length;
+    }
+
+    // Allocate the combined array
+    let combinedArray = new Uint32Array(totalLength);
+
+    // Set the initial values
+    combinedArray[0] = TYPES.element;
+    combinedArray[1] = tagIndex;
+
+    // Append each argument to the combined array
+    let offset = 2;
+    for (let i = 0; i < args.length; i++) {
+        combinedArray.set(args[i], offset);
+        offset += args[i].length;
+    }
+
+    return combinedArray;
+}
+
+
+const label = (label: string): Uint32Array => {
+    let labelIndex = LABEL[label]
+    if (labelIndex === undefined) {
+        labelIndex = LABEL_ARRAY.length
+        LABEL_ARRAY.push(label)
+        LABEL[label] = labelIndex
+    }
+    return new Uint32Array([TYPES.label, labelIndex]);
+};
+
+const TYPES = {
+    element: 0,
+    text: 1,
+    label: 2, 
+    attr: 3,
+}; 
+
+// Initialize data structures
+const TAG_ARRAY: string[] = [];
+const TAG: Record<string, number> = {};
+const ATTR_ARRAY: string[] = [];
+const ATTR: Record<string, number> = {};
+const TEXTS_ARRAY: string[] = [];
+const TEXTS: Record<string, number> = {};
+const LABEL_ARRAY: string[] = [];
+const LABEL: Record<string, number> = {};
+
+// Create example element
+const el = element("div", label("mydiv"), attr("title", "ciao"), attr("href", "ciao"), element("div", text("ciao")));
+console.log(el);
+
+
+// // Application state
+// let state = {
+//     title: "Dynamic Title",
+//     clickCount: 0
+// };
+
+// let template: DomTemplate = {
+//     generator: () => {
+//         element
+//     },
+//     domTemplateNode: null
+// }
+// interface DomLinkerNodeText {
+//     parent:DomLinkerNodeElement,
+//     templateNode: DomTemplateNodeText,
+//     dom: HTMLElement,
+//     children: HTMLElement
+// }
+// interface DomLinkerNodeElement {
+//     parent:DomLinkerNodeElement,
+//     templateNode: HTMLElement,
+//     dom: HTMLElement,
+//     children: HTMLElement
+// }
+
+// function createNodeTemplate(parent, blueprint) {
+//     console.log(createNodeTemplate,{parent, blueprint});
+//     return {
+//         node: createNode(parent),
+//         blueprint,
+//         slots: {}
+//     };
+// }
+// function createNode(parent) {
+//     console.log("createNode ", parent);
+//     return {
+//         parent,
+//         tag: null,
+//         arguments: {},
+//         events: {},
+//         children: []
+//     }
+// }
+
+// // Helper functions to facilitate node creation
+// const text = (value, label = null) => activeNodeArgumentCheck([NodeArgumentType.TEXT, value, label]);
+// const attribute = (name, value) => [NodeArgumentType.ATTRIBUTE, name, value];
+// const onEvent = (event, listener) => [NodeArgumentType.EVENT, event, listener];
+// const content = (func) => [NodeArgumentType.CONTENT, func];
+// const slot = (name) => activeNodeArgumentCheck([NodeArgumentType.SLOT, name]);
+// const element = (tag, ...args) => activeNodeArgumentCheck([NodeArgumentType.ELEMENT, tag, ...args]);
+// const label = (label) => [NodeArgumentType.LABEL, label];
+// const empty = activeNodeArgumentCheck(() => null);
+
+// // Application state
+// let state = {
+//     title: "Dynamic Title",
+//     clickCount: 0
+// };
+
+// // Example template demonstrating dynamic updates
+// function mainTemplate() {
+//     return element("div",
+//         attribute("class", "container"),
+//         text(state.title),
+//         element("button",
+//             text(`Click me: ${state.clickCount}`),
+//             onEvent("click", () => {
+//                 state.clickCount++;
+//                 renderTemplate(nodeTemplate); // Re-render to reflect state changes
+//             })
+//         ),
+//         state.clickCount > 5 ? text("You have clicked many times!") : null,
+//         content(() => {
+//             // if (state.clickCount > 7) { text("1 You have clicked many times!") }
+//             // else if (state.clickCount > 5) { text(`click more ${7 - state.clickCount}`) }
+//             // else { empty() }
+
+//             // if (state.clickCount > 7) { text("2 You have clicked many times!", "label") }
+//             // else if (state.clickCount > 5) { text(`click more ${7 - state.clickCount}`, "label") }
+
+//             // slot("test")
+//             // if (state.clickCount > 7) { element("div", label("label"), text("3 You have clicked many times!")) }
+//             // else if (state.clickCount > 5) { element("div", label("label"), text(`click more ${7 - state.clickCount}`)) }
+
+//             // if(state.clickCount > 7){element(["div","label"],text("You have clicked many times!"))}
+//             // else if(state.clickCount > 5){element(["div","label"],label("label"),text(`click more ${7-state.clickCount}`))}
+
+//             // if(state.clickCount > 7){element(["div","label"],text("You have clicked many times!"))}
+//             // else if(state.clickCount > 5){element(["div","label"],label("label"),text(`click more ${7-state.clickCount}`))}
+
+//             // showIf(state.clickCount > 7, element("div#label",text("You have clicked many times!")))
+//             // showElse(state.clickCount > 5, element("div#label",text(`click more ${7-state.clickCount}`)))
+//             // showElse(element("div#label",text("You have clicked many times!")))
+
+//             // htmlString(`<div><div><div><h5>HTML ${state.clickCount}</h5></div></div></div>`)
+//             // html(`<div>`,`<div>`,`<h5>`,`HTML ${state.clickCount}`)
+//             // html(`<div>`,[`<h5>`,`HTML ${state.clickCount}`],[`<h6>`,`HTML ${state.clickCount}`])
+//             // text(`TEXT Click me: ${state.clickCount}`)
+//             element("div", element("div", text(`TAG Click me: ${state.clickCount}`)))
+//         })
+//     );
+// }
+
+// // Initialize node template and mount to DOM
+// let nodeTemplate = createNodeTemplate(null, mainTemplate);
+// const renderedElement = renderTemplate(nodeTemplate);
+// document.body.appendChild(renderedElement);
+
+
+// // setTimeout(() => {
+// //     state.title = null
+// //     renderTemplate(nodeTemplate)
+// //     console.log(nodeTemplate)
+// //     setTimeout(() => {
+// //         state.title = "new Title"
+// //         renderTemplate(nodeTemplate)
+// //         console.log(nodeTemplate)
+// //     }, 3000)
+// // }, 3000)

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test</title>
+    <style>
+        #output {
+            margin-top: 20px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Performance Test</h1>
+    <button onclick="runArrayTest()">Run Array Test</button>
+    <button onclick="runObjectTest()">Run Object Test</button>
+    <button onclick="runOptimizedObjectTest()">Run Optimized Object Test</button>
+    <button onclick="runOptimizedArrayTest()">Run Optimized Array Test</button>
+    <button onclick="runTypedArrayTest()">Run Typed Array Test (Uint32Array)</button>
+    <button onclick="runBufferTest()">Run Buffer Test</button>
+    <div id="output"></div>
+
+    <script>
+        const dictionary = {
+            tag: 1,
+            key: 2,
+            attributes: 3,
+            class: 4,
+            div: 5,
+            depth: 6,
+            children: 7
+        };
+
+        // Generatore di un grande albero di elementi per la struttura ad array
+        function generateLargeTreeArray(depth, breadth) {
+            if (depth === 0) return [];
+
+            const children = [];
+            for (let i = 0; i < breadth; i++) {
+                children.push(generateLargeTreeArray(depth - 1, breadth));
+            }
+
+            return [dictionary.tag, [dictionary.key + depth], [dictionary.class, dictionary.depth + depth], ...children];
+        }
+
+        // Generatore di un grande albero di elementi per la struttura ad oggetti
+        function generateLargeTreeObject(depth, breadth) {
+            if (depth === 0) return {};
+
+            const children = [];
+            for (let i = 0; i < breadth; i++) {
+                children.push(generateLargeTreeObject(depth - 1, breadth));
+            }
+
+            return {
+                [dictionary.tag]: dictionary.div,
+                [dictionary.key]: dictionary.key + depth,
+                [dictionary.attributes]: { [dictionary.class]: dictionary.depth + depth },
+                [dictionary.children]: children
+            };
+        }
+
+        // Generatore di un grande albero di elementi per la struttura ottimizzata con numeri (oggetti)
+        function generateOptimizedTreeObject(depth, breadth) {
+            if (depth === 0) return {};
+
+            const children = [];
+            for (let i = 0; i < breadth; i++) {
+                children.push(generateOptimizedTreeObject(depth - 1, breadth));
+            }
+
+            return {
+                [dictionary.tag]: dictionary.div,
+                [dictionary.key]: depth,
+                [dictionary.attributes]: { [dictionary.class]: depth },
+                [dictionary.children]: children
+            };
+        }
+
+        // Generatore di un grande albero di elementi per la struttura ottimizzata con numeri (array)
+        function generateOptimizedTreeArray(depth, breadth) {
+            if (depth === 0) return [];
+
+            const children = [];
+            for (let i = 0; i < breadth; i++) {
+                children.push(generateOptimizedTreeArray(depth - 1, breadth));
+            }
+
+            return [dictionary.tag, [depth], [dictionary.class, depth], ...children];
+        }
+
+        // Generatore di un grande albero di elementi per la struttura ottimizzata con array tipizzato (Uint32Array)
+        function generateTypedArrayTree(depth, breadth) {
+            const maxElements = Math.pow(breadth + 1, depth) - 1;
+            const result = new Uint32Array(maxElements * 4);
+            let index = 0;
+
+            function buildTree(currentDepth) {
+                if (currentDepth === 0) return [];
+
+                const children = [];
+                for (let i = 0; i < breadth; i++) {
+                    children.push(buildTree(currentDepth - 1));
+                }
+
+                result[index++] = dictionary.tag;
+                result[index++] = currentDepth;
+                result[index++] = dictionary.class;
+                result[index++] = currentDepth;
+                for (const child of children) {
+                    result.set(child, index);
+                    index += child.length;
+                }
+
+                return result.subarray(index - 4 * (children.length + 1), index);
+            }
+
+            buildTree(depth);
+            return result;
+        }
+
+        // Generatore di un grande albero di elementi per la struttura con ArrayBuffer e Uint32Array
+        function generateBufferTree(depth, breadth) {
+            const maxElements = Math.pow(breadth + 1, depth) - 1;
+            const buffer = new ArrayBuffer(maxElements * 4 * 4);
+            const result = new Uint32Array(buffer);
+            let index = 0;
+
+            function buildTree(currentDepth) {
+                if (currentDepth === 0) return [];
+
+                const children = [];
+                for (let i = 0; i < breadth; i++) {
+                    children.push(buildTree(currentDepth - 1));
+                }
+
+                result[index++] = dictionary.tag;
+                result[index++] = currentDepth;
+                result[index++] = dictionary.class;
+                result[index++] = currentDepth;
+                for (const child of children) {
+                    result.set(child, index);
+                    index += child.length;
+                }
+
+                return result.subarray(index - 4 * (children.length + 1), index);
+            }
+
+            buildTree(depth);
+            return result;
+        }
+
+        // Funzione per testare la struttura ad array
+        function runArrayTest() {
+            const output = document.getElementById("output");
+            console.time("Array Test");
+            const startTime = performance.now();
+            const tree = generateLargeTreeArray(10, 4); // Increased complexity
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000;
+            console.timeEnd("Array Test");
+            output.innerHTML = `<p>Array Test Completed in ${duration.toFixed(2)} seconds</p>`;
+            console.log(tree);
+        }
+
+        // Funzione per testare la struttura ad oggetti
+        function runObjectTest() {
+            const output = document.getElementById("output");
+            console.time("Object Test");
+            const startTime = performance.now();
+            const tree = generateLargeTreeObject(10, 4); // Increased complexity
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000;
+            console.timeEnd("Object Test");
+            output.innerHTML = `<p>Object Test Completed in ${duration.toFixed(2)} seconds</p>`;
+            console.log(tree);
+        }
+
+        // Funzione per testare la struttura ottimizzata con numeri (oggetti)
+        function runOptimizedObjectTest() {
+            const output = document.getElementById("output");
+            console.time("Optimized Object Test");
+            const startTime = performance.now();
+            const tree = generateOptimizedTreeObject(10, 4); // Increased complexity
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000;
+            console.timeEnd("Optimized Object Test");
+            output.innerHTML = `<p>Optimized Object Test Completed in ${duration.toFixed(2)} seconds</p>`;
+            console.log(tree);
+        }
+
+        // Funzione per testare la struttura ottimizzata con numeri (array)
+        function runOptimizedArrayTest() {
+            const output = document.getElementById("output");
+            console.time("Optimized Array Test");
+            const startTime = performance.now();
+            const tree = generateOptimizedTreeArray(10, 4); // Increased complexity
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000;
+            console.timeEnd("Optimized Array Test");
+            output.innerHTML = `<p>Optimized Array Test Completed in ${duration.toFixed(2)} seconds</p>`;
+            console.log(tree);
+        }
+
+        // Funzione per testare la struttura ottimizzata con array tipizzato (Uint32Array)
+        function runTypedArrayTest() {
+            const output = document.getElementById("output");
+            console.time("Typed Array Test");
+            const startTime = performance.now();
+            const tree = generateTypedArrayTree(10, 4); // Increased complexity
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000;
+            console.timeEnd("Typed Array Test");
+            output.innerHTML = `<p>Typed Array Test (Uint32Array) Completed in ${duration.toFixed(2)} seconds</p>`;
+            console.log(tree);
+        }
+
+        // Funzione per testare la struttura con ArrayBuffer e Uint32Array
+        function runBufferTest() {
+            const output = document.getElementById("output");
+            console.time("Buffer Test");
+            const startTime = performance.now();
+            const tree = generateBufferTree(10, 4); // Increased complexity
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000;
+            console.timeEnd("Buffer Test");
+            output.innerHTML = `<p>Buffer Test Completed in ${duration.toFixed(2)} seconds</p>`;
+            console.log(tree);
+        }
+        let a  = ()=>{}
+    </script>
+</body>
+</html>

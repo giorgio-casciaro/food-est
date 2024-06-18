@@ -50,7 +50,7 @@ function renderTemplate(templateData) {
 }
 
 function getCurrentNodeChild(node) {
-    let child = node.children[node.childIndex + node.createdChildren -  node.removedChildren]
+    let child = node.children[node.childIndex]
     if(!child){
         console.log("getCurrentNodeChild error", {childIndex:node.childIndex, node})
         throw new Error("getCurrentNodeChild");
@@ -80,16 +80,12 @@ function createNode(parent) {
         args: [],
         argsIndex: 0,
         childIndex: 0,
-        createdChildren: 0,
-        removedChildren: 0,
         scatteredSubNodesArgs: null,
     };
 
     if(parent){  
         parent.children[parent.childIndex] = node
         parent.childIndex += 1
-        parent.createdChildren += 1
-        
         // if(parent.scatteredSubNodesArgs !== null){
         //     node.scatteredSubNodesArgs = parent.scatteredSubNodesArgs
         //     const shiftedNode = parent.scatteredSubNodesArgs.shift()
@@ -107,8 +103,6 @@ function createNodeDomChild(dom, parent) {
     if(parent){  
         parent.children[parent.childIndex] = node
         parent.childIndex += 1
-        parent.createdChildren += 1
-        
         parent.dom.appendChild(node.dom)
         // if(parent.scatteredSubNodesArgs !== null){
         //     const shiftedNode = parent.scatteredSubNodesArgs.shift()
@@ -178,7 +172,6 @@ function removeArgument(node, newArg, oldArg) {
         case NodeArgumentType.TEXT:
             node.dom.removeChild(node.children[activeNodeArgumentIndex]);
             newArg = createNodeChildPlaceholder(node)
-            node.removedChildren += 1
             break;
         case NodeArgumentType.ATTRIBUTE:
             node.dom.removeAttribute(oldArg[ArgumentKey.NAME]);
@@ -189,7 +182,6 @@ function removeArgument(node, newArg, oldArg) {
         case NodeArgumentType.ELEMENT:
             node.dom.removeChild(node.children[activeNodeArgumentIndex].dom);
             newArg = createNodeChildPlaceholder(node)
-            node.removedChildren += 1
             break;
         default:
             console.error("removeArgument", {node, oldArg});
@@ -293,8 +285,6 @@ let state = {
 };
 
 // Example template demonstrating dynamic updates
-
-// Example template demonstrating dynamic updates
 function mainTemplate() {
     return element("div",
         attribute("class", "container"),
@@ -306,34 +296,9 @@ function mainTemplate() {
                 renderTemplate(nodeTemplate); // Re-render to reflect state changes
             })
         ),
-        state.clickCount == 1 ? text("You have clicked many times!") : null,
+        state.clickCount === 1 ? text("You have clicked many times!") : null,
         content(() => {
-            // if (state.clickCount > 7) { text("1 You have clicked many times!") }
-            // else if (state.clickCount > 5) { text(`click more ${7 - state.clickCount}`) }
-            // else { empty() }
-
-            // if (state.clickCount > 7) { text("2 You have clicked many times!", "label") }
-            // else if (state.clickCount > 5) { text(`click more ${7 - state.clickCount}`, "label") }
-
-            // slot("test")
-            // if (state.clickCount > 7) { element("div", label("label"), text("3 You have clicked many times!")) }
-            // else if (state.clickCount > 5) { element("div", label("label"), text(`click more ${7 - state.clickCount}`)) }
-
-            // if(state.clickCount > 7){element(["div","label"],text("You have clicked many times!"))}
-            // else if(state.clickCount > 5){element(["div","label"],label("label"),text(`click more ${7-state.clickCount}`))}
-
-            // if(state.clickCount > 7){element(["div","label"],text("You have clicked many times!"))}
-            // else if(state.clickCount > 5){element(["div","label"],label("label"),text(`click more ${7-state.clickCount}`))}
-
-            // showIf(state.clickCount > 7, element("div#label",text("You have clicked many times!")))
-            // showElse(state.clickCount > 5, element("div#label",text(`click more ${7-state.clickCount}`)))
-            // showElse(element("div#label",text("You have clicked many times!")))
-
-            // htmlString(`<div><div><div><h5>HTML ${state.clickCount}</h5></div></div></div>`)
-            // html(`<div>`,`<div>`,`<h5>`,`HTML ${state.clickCount}`)
-            // html(`<div>`,[`<h5>`,`HTML ${state.clickCount}`],[`<h6>`,`HTML ${state.clickCount}`])
-            // text(`TEXT Click me: ${state.clickCount}`)
-            element("div", element("div", text(`TAG Click me: ${state.clickCount}`)))
+            element("div", element("div", text(`last TAG Click me: ${state.clickCount}`)))
         })
     );
 }
