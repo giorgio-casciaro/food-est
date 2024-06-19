@@ -1,253 +1,230 @@
-// const text = (value: string, ...args: Uint32Array[]): Uint32Array => {
-//     let valueIndex = TEXTS[value];
-//     if (valueIndex === undefined) {
-//         valueIndex = TEXTS_ARRAY.length;
-//         TEXTS_ARRAY.push(value);
-//         TEXTS[value] = valueIndex;
-//     }
-//     return new Uint32Array([TYPES.text, valueIndex]);
-// };
+interface HtmlElementState {
+    tag: string;
+    label: null | string;
+    attrs: Record<string, string>;
+    events: Record<string, () => void>;
+    styles: Record<string, string>;
+    children: Array<HtmlElementState | HtmlElementTextState>;
+}
 
-// const attr = (name: string, value: string): Uint32Array => {
-//     let nameIndex = ATTR[name];
-//     if (nameIndex === undefined) {
-//         nameIndex = ATTR_ARRAY.length;
-//         ATTR_ARRAY.push(name);
-//         ATTR[name] = nameIndex;
-//     }
-//     let valueIndex = ATTR[value];
-//     if (valueIndex === undefined) {
-//         valueIndex = ATTR_ARRAY.length;
-//         ATTR_ARRAY.push(value);
-//         ATTR[value] = valueIndex;
-//     }
-//     return new Uint32Array([TYPES.attr, nameIndex, valueIndex]);
-// };
+interface HtmlElementTextState {
+    type: 'text';
+    value: string;
+}
 
-// const style = (name: string, value: string): Uint32Array => {
-//     let nameIndex = STYLES[name];
-//     if (nameIndex === undefined) {
-//         nameIndex = STYLE_ARRAY.length;
-//         STYLE_ARRAY.push(name);
-//         STYLES[name] = nameIndex;
-//     }
-//     let valueIndex = STYLES[value];
-//     if (valueIndex === undefined) {
-//         valueIndex = STYLE_ARRAY.length;
-//         STYLE_ARRAY.push(value);
-//         STYLES[value] = valueIndex;
-//     }
-//     return new Uint32Array([TYPES.style, nameIndex, valueIndex]);
-// };
+const TYPES = { element: 0, text: 1, label: 2, attr: 3, style: 4, event: 5 };
+const STRINGS_ARRAY: string[] = [], STRINGS_KEYS: Record<string, number> = {};
+// const FUNCTIONS: Record<string, Function> = {};
+const FUNCTIONS: Function[] = [];
 
-// const on = (name: string, value: Function): Uint32Array => {
-//     let nameIndex = EVENTS[name];
-//     if (nameIndex === undefined) {
-//         nameIndex = EVENT_ARRAY.length;
-//         EVENT_ARRAY.push(name);
-//         EVENTS[name] = nameIndex;
-//     }
-//     let valueIndex = EVENTS[value.toString()];
-//     if (valueIndex === undefined) {
-//         valueIndex = EVENT_ARRAY.length;
-//         EVENT_ARRAY.push(value.toString());
-//         EVENTS[value.toString()] = valueIndex;
-//     }
-//     return new Uint32Array([TYPES.event, nameIndex, valueIndex]);
-// };
+type Uint32ArrayModifier = (arr: Uint32Array, index: number) => number;
 
-// const element = (tag: string, ...args: Uint32Array[]): Uint32Array => {
-//     let tagIndex = TAG[tag];
-//     if (tagIndex === undefined) {
-//         tagIndex = TAG_ARRAY.length;
-//         TAG_ARRAY.push(tag);
-//         TAG[tag] = tagIndex;
-//     }
+const getIndex = (value: string): number => {
+    let index = STRINGS_KEYS[value];
+    if (index === undefined) {
+        index = STRINGS_ARRAY.length;
+        STRINGS_ARRAY.push(value);
+        STRINGS_KEYS[value] = index;
+    }
+    return index;
+};
 
-//     // Calculate the total length needed for the combined array
-//     let totalLength = 2; // for TYPES.element and tagIndex
-//     for (let i = 0; i < args.length; i++) {
-//         totalLength += args[i].length;
-//     }
+const text = (value: string): Uint32ArrayModifier => {
+    const valueIndex = getIndex(value);
+    return (arr: Uint32Array, index: number): number => {
+        // arr.set([TYPES.text, valueIndex], index);
+        arr[index] = TYPES.text;
+        arr[index + 1] = valueIndex;
+        return index + 2;
+    };
+};
 
-//     // Allocate the combined array
-//     let combinedArray = new Uint32Array(totalLength);
+const label = (label: string): Uint32ArrayModifier => {
+    const labelIndex = getIndex(label);
+    return function(arr: Uint32Array, index: number): number{
+        arr[index] = TYPES.label;
+        arr[index + 1] = labelIndex;
+        // arr.set([TYPES.label, labelIndex], index);
+        return index + 2;
+    };
+};
 
-//     // Set the initial values
-//     combinedArray[0] = TYPES.element;
-//     combinedArray[1] = tagIndex;
+const attr = (name: string, value: string): Uint32ArrayModifier => {
+    const nameIndex = getIndex(name);
+    const valueIndex = getIndex(value);
+    return function(arr: Uint32Array, index: number): number{
+        arr[index] = TYPES.attr;
+        arr[index + 1] = nameIndex;
+        arr[index + 2] = valueIndex;
+        // arr.set([TYPES.attr, nameIndex, valueIndex], index);
+        return index + 3;
+    };
+};
 
-//     // Append each argument to the combined array
-//     let offset = 2;
-//     for (let i = 0; i < args.length; i++) {
-//         combinedArray.set(args[i], offset);
-//         offset += args[i].length;
-//     }
+const style = (name: string, value: string): Uint32ArrayModifier => {
+    const nameIndex = getIndex(name);
+    const valueIndex = getIndex(value);
+    return function(arr: Uint32Array, index: number): number{
+        arr[index] = TYPES.style;
+        arr[index + 1] = nameIndex;
+        arr[index + 2] = valueIndex;
+        // arr.set([TYPES.style, nameIndex, valueIndex], index);
+        return index + 3;
+    };
+}; 
+const on = (name: string, value: Function): Uint32ArrayModifier => {
+    const nameIndex = getIndex(name);
+    const valueIndex = FUNCTIONS.length;
+    FUNCTIONS.push(value);
+    return function(arr: Uint32Array, index: number): number {
+        arr[index] = TYPES.event;
+        arr[index + 1] = nameIndex;
+        arr[index + 2] = valueIndex;
+        // arr.set([TYPES.event, nameIndex, valueIndex], index);
+        return index + 3;
+    };
+};
 
-//     return combinedArray;
-// };
+const element = (tag: string, ...args: Uint32ArrayModifier[]): Uint32ArrayModifier => {
+    const tagIndex = getIndex(tag);
+    return function(arr: Uint32Array, index: number): number{
+        arr[index] = TYPES.element;
+        arr[index + 1] = tagIndex;
+        let offset = index + 2;
+        for (let i = 0; i < args.length; i++) {
+            offset = args[i](arr, offset);
+        }
+        return offset;
+    };
+};
 
-// const label = (label: string): Uint32Array => {
-//     let labelIndex = LABEL[label];
-//     if (labelIndex === undefined) {
-//         labelIndex = LABEL_ARRAY.length;
-//         LABEL_ARRAY.push(label);
-//         LABEL[label] = labelIndex;
-//     }
-//     return new Uint32Array([TYPES.label, labelIndex]);
-// };
+const textObj = (value: string): HtmlElementTextState => ({ type: 'text', value });
+const attrObj = (name: string, value: string): Record<string, string> => ({ [name]: value });
+const styleObj = (name: string, value: string): Record<string, string> => ({ [name]: value });
+const onObj = (name: string, value: () => void): Record<string, () => void> => ({ [name]: value });
 
-// const TYPES = {
-//     element: 0,
-//     text: 1,
-//     label: 2,
-//     attr: 3,
-//     style: 4,
-//     event: 5,
-// };
+const elementObj = (tag: string, ...args: Array<HtmlElementState | HtmlElementTextState | Record<string, string> | Record<string, () => void> | null>): HtmlElementState => {
+    const attrs: Record<string, string> = {}, events: Record<string, () => void> = {}, styles: Record<string, string> = {};
+    let label: string | null = null;
+    const children: Array<HtmlElementState | HtmlElementTextState> = [];
+    args.forEach(arg => {
+        if (arg === null) return;
+        if ((arg as HtmlElementTextState).type === 'text') children.push(arg as HtmlElementTextState);
+        else if ((arg as HtmlElementState).tag) children.push(arg as HtmlElementState);
+        else {
+            const record = arg as Record<string, any>;
+            for (const key in record) {
+                if (record[key] instanceof Function) events[key] = record[key];
+                else if (key === 'label') label = record[key];
+                else attrs[key] = record[key];
+            }
+        }
+    });
+    return { tag, label, attrs, styles, events, children };
+};
 
-// const TAG_ARRAY: string[] = [];
-// const TAG: Record<string, number> = {};
-// const ATTR_ARRAY: string[] = [];
-// const ATTR: Record<string, number> = {};
-// const TEXTS_ARRAY: string[] = [];
-// const TEXTS: Record<string, number> = {};
-// const LABEL_ARRAY: string[] = [];
-// const LABEL: Record<string, number> = {};
-// const STYLE_ARRAY: string[] = [];
-// const STYLES: Record<string, number> = {};
-// const EVENT_ARRAY: string[] = [];
-// const EVENTS: Record<string, number> = {};
+const runTest = (testFunction: () => void, iterations: number): number => {
+    const start = performance.now();
+    for (let i = 0; i < iterations; i++) testFunction();
+    return performance.now() - start;
+};
 
-// interface HtmlElementState {
-//     tag: string;
-//     label: null | string;
-//     args: Record<string, string>;
-//     events: Record<string, () => void>;
-//     styles: Record<string, string>;
-//     children: Array<HtmlElementState | HtmlElementTextState>;
-// }
+let createdElementsArray: Uint32Array[] = [];
+let createdElementsObj: object[] = [];
+const createComplexElement = (depth: number, branches: number): Uint32ArrayModifier => {
+    const createElement = (currentDepth: number): Uint32ArrayModifier => {
+        if (currentDepth > depth) return (arr: Uint32Array, index: number) => index;
 
-// interface HtmlElementTextState {
-//     type: 'text';
-//     value: string;
-// }
+        const children: Uint32ArrayModifier[] = [];
+        for (let i = 0; i < branches; i++) {
+            children.push(createElement(currentDepth + 1));
+        }
 
-// const decodeElement = (encodedArray: Uint32Array): HtmlElementState => {
-//     const decodeArray = (index: number): [number, HtmlElementState | HtmlElementTextState] => {
-//         const type = encodedArray[index];
-//         switch (type) {
-//             case TYPES.element: {
-//                 const tagIndex = encodedArray[index + 1];
-//                 const tag = TAG_ARRAY[tagIndex];
-//                 let label: string | null = null;
-//                 const args: Record<string, string> = {};
-//                 const events: Record<string, () => void> = {};
-//                 const styles: Record<string, string> = {};
-//                 const children: Array<HtmlElementState | HtmlElementTextState> = [];
+        const tag = currentDepth === depth ? "p" : "div";
+        const textContent = `Content at depth ${currentDepth}`;
+        return element(
+            tag,
+            label(`depth-${currentDepth}`),
+            attr("class", `depth-${currentDepth}-class`),
+            style("padding", `${currentDepth * 10}px`),
+            style("margin", `${currentDepth * 5}px`),
+            on("click", () =>{
+                console.log(`Long code ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+            }),
+            text(textContent),
+            ...children
+        );
+    };
 
-//                 let i = index + 2;
-//                 while (i < encodedArray.length) {
-//                     const argType = encodedArray[i];
-//                     switch (argType) {
-//                         case TYPES.label:
-//                             label = LABEL_ARRAY[encodedArray[i + 1]];
-//                             i += 2;
-//                             break;
-//                         case TYPES.attr:
-//                             args[ATTR_ARRAY[encodedArray[i + 1]]] = ATTR_ARRAY[encodedArray[i + 2]];
-//                             i += 3;
-//                             break;
-//                         case TYPES.style:
-//                             styles[STYLE_ARRAY[encodedArray[i + 1]]] = STYLE_ARRAY[encodedArray[i + 2]];
-//                             i += 3;
-//                             break;
-//                         case TYPES.event:
-//                             events[EVENT_ARRAY[encodedArray[i + 1]]] = new Function(EVENT_ARRAY[encodedArray[i + 2]]) as () => void;
-//                             i += 3;
-//                             break;
-//                         case TYPES.text: {
-//                             const value = TEXTS_ARRAY[encodedArray[i + 1]];
-//                             children.push({ type: 'text', value });
-//                             i += 2;
-//                             break;
-//                         }
-//                         case TYPES.element: {
-//                             const [newIndex, child] = decodeArray(i);
-//                             children.push(child);
-//                             i = newIndex;
-//                             break;
-//                         }
-//                         default:
-//                             i = encodedArray.length; // Exit loop if unknown type
-//                             break;
-//                     }
-//                 }
+    return createElement(1);
+};
 
-//                 return [i, { tag, label, args, events, styles, children }];
-//             }
-//             case TYPES.text: {
-//                 const value = TEXTS_ARRAY[encodedArray[index + 1]];
-//                 return [index + 2, { type: 'text', value }];
-//             }
-//             default:
-//                 throw new Error("Unknown type found in encoded array.");
-//         }
-//     };
+const createComplexElementObj = (depth: number, branches: number): HtmlElementState => {
+    const createElement = (currentDepth: number): HtmlElementState => {
+        if (currentDepth > depth) return null;
 
-//     const [, decodedElement] = decodeArray(0);
-//     return decodedElement as HtmlElementState;
-// };
+        const children: Array<HtmlElementState | HtmlElementTextState> = [];
+        for (let i = 0; i < branches; i++) {
+            const child = createElement(currentDepth + 1);
+            if (child) children.push(child);
+        }
 
-// // Example usage
-// const el = element(
-//     "div",
-//     label("container"),
-//     attr("id", "mainContainer"),
-//     style("display", "flex"),
-//     style("flexDirection", "column"),
-//     on("mouseover", () => console.log("Mouse over main container")),
-//     element(
-//         "header",
-//         label("header"),
-//         attr("class", "headerClass"),
-//         style("backgroundColor", "blue"),
-//         element("h1", text("Welcome to the Page")),
-//         element(
-//             "nav",
-//             label("navigation"),
-//             attr("class", "navClass"),
-//             element("ul",
-//                 element("li", text("Home")),
-//                 element("li", text("About")),
-//                 element("li", text("Contact"))
-//             )
-//         )
-//     ),
-//     element(
-//         "main",
-//         label("content"),
-//         attr("class", "contentClass"),
-//         style("flex", "1"),
-//         element("section",
-//             label("section1"),
-//             element("h2", text("Section 1")),
-//             element("p", text("This is the first section."))
-//         ),
-//         element("section",
-//             label("section2"),
-//             element("h2", text("Section 2")),
-//             element("p", text("This is the second section."))
-//         )
-//     ),
-//     element(
-//         "footer",
-//         label("footer"),
-//         attr("class", "footerClass"),
-//         style("backgroundColor", "grey"),
-//         text("Footer content goes here")
-//     )
-// );
+        const tag = currentDepth === depth ? "p" : "div";
+        const textContent = `Content at depth ${currentDepth}`;
+        return elementObj(
+            tag,
+            { label: `depth-${currentDepth}` },
+            attrObj("class", `depth-${currentDepth}-class`),
+            styleObj("padding", `${currentDepth * 10}px`),
+            styleObj("margin", `${currentDepth * 5}px`),
+            onObj("click", () => {
+                console.log(`Long code ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+                console.log(`Clicked depth ${currentDepth}`)
+            }),
+            textObj(textContent),
+            ...children
+        );
+    };
 
-// const decodedEl = decodeElement(el);
-// console.log(decodedEl);
+    return createElement(1);
+};
+
+const testUint32Array = () => {
+    const createdElement = createComplexElement(5, 3);
+    const arr = new Uint32Array(3000); // Adjust size as needed for complexity
+    createdElement(arr, 0);
+    createdElementsArray.push(arr);
+};
+
+const testObjects = () => {
+    const createdElement = createComplexElementObj(5, 3);
+    createdElementsObj.push(createdElement);
+};
+
+
+document.getElementById("testUint32Array")?.addEventListener("click", () => {
+    const iterations = 10000;
+    const time = runTest(testUint32Array, iterations);
+    document.getElementById("results")!.innerText = `Uint32Array test completed in ${time.toFixed(2)}ms for ${iterations} iterations.`;
+    console.log("createdElementsArray", createdElementsArray[0]);
+    createdElementsArray = [];
+});
+
+document.getElementById("testObjects")?.addEventListener("click", () => {
+    const iterations = 10000;
+    const time = runTest(testObjects, iterations);
+    document.getElementById("results")!.innerText = `Object test completed in ${time.toFixed(2)}ms for ${iterations} iterations.`;
+    console.log("createdElementsObj", createdElementsObj[0]);
+    createdElementsObj = [];
+});
