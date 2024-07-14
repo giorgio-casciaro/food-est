@@ -1,0 +1,6 @@
+- estrema velocità di rendering dei template (SSR e nel browser)
+- rerendering granulare => signals: collegamento fra dom, stato e template
+- hydration solo parziale: lazyloading dopo eventi o in risposta a cambiamento di stato
+- possibilità di gestire l'offline (caricando tutti gli script) 
+- utilizzo di Typed Array pr la gestione dei template e del diffing
+- template in js non compilato (no jsx)
